@@ -1,4 +1,4 @@
-const DEFAULT_MODEL = "inclusionai/ling-3.1-flash-free";
+const DEFAULT_MODEL = "gpt-6-luna";
 
 function sanitize(value, max = 160) {
   return String(value ?? "").replace(/[\r\n<>]/g, " ").trim().slice(0, max);
@@ -27,14 +27,11 @@ function fallback(input, quote) {
   };
 }
 
-async function fetchWithTimeout(url, ms = 2200) {
+async function fetchWithTimeout(url, options = {}, ms = 3500) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
   try {
-    return await fetch(url, {
-      signal: controller.signal,
-      headers: { "User-Agent": "CheckMate/1.0" }
-    });
+    return await fetch(url, { ...options, signal: controller.signal });
   } finally {
     clearTimeout(timer);
   }
@@ -45,7 +42,9 @@ async function freshContext() {
   let headline = "";
 
   try {
-    const response = await fetchWithTimeout("https://zenquotes.io/api/today");
+    const response = await fetchWithTimeout("https://zenquotes.io/api/today", {
+      headers: { "User-Agent": "CheckMate/1.0" }
+    }, 2200);
     if (response.ok) {
       const data = await response.json();
       quote = sanitize(data?.[0]?.q, 180);
@@ -53,7 +52,9 @@ async function freshContext() {
   } catch (_) {}
 
   try {
-    const response = await fetchWithTimeout("https://www.positive.news/feed/");
+    const response = await fetchWithTimeout("https://www.positive.news/feed/", {
+      headers: { "User-Agent": "CheckMate/1.0" }
+    }, 2200);
     if (response.ok) {
       const xml = await response.text();
       const item = xml.match(/<item>[\s\S]*?<title>([\s\S]*?)<\/title>/i);
@@ -67,6 +68,25 @@ async function freshContext() {
   } catch (_) {}
 
   return { quote, headline };
+}
+
+function getResponseText(data) {
+  if (typeof data?.output_text === "string" && data.output_text.trim()) {
+    return data.output_text.trim();
+  }
+
+  if (!Array.isArray(data?.output)) return "";
+
+  for (const item of data.output) {
+    if (!Array.isArray(item?.content)) continue;
+    for (const part of item.content) {
+      if (part?.type === "output_text" && typeof part.text === "string") {
+        return part.text.trim();
+      }
+    }
+  }
+
+  return "";
 }
 
 export default async function handler(req, res) {
@@ -90,18 +110,18 @@ export default async function handler(req, res) {
 
   const fresh = await freshContext();
   const fallbackResult = fallback(input, fresh.quote);
-  const token = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN;
+  const apiKey = process.env.OPENAI_API_KEY;
 
-  if (!token) {
-    return res.status(200).json(fallbackResult);
+  if (!apiKey) {
+    return res.status(200).json({ ...fallbackResult, source: "CheckMate fallback · OpenAI key unavailable" });
   }
 
-  const prompt = `Create a short daily reset for a wellbeing and habit app called CheckMate.
+  const prompt = `Create a short daily reset for a wellbeing and journaling app called CheckMate.
 
 This is supportive coaching, not therapy or medical advice.
 Tone: warm, grounded, concise, never preachy, never guilt-based, never toxic positivity.
 Do not diagnose. Do not say the person is failing. Do not praise suffering.
-Return exactly two sections in plain text:
+Return exactly:
 MESSAGE: 2 short sentences.
 ACTION: one concrete action that takes under 30 minutes.
 
@@ -114,57 +134,54 @@ User check-in:
 - completed anchors: ${input.completedAnchors.join(", ") || "none yet"}
 - their three wins: ${input.wins.join(" | ") || "not set yet"}
 
-Fresh internet context, use only if it naturally helps:
+Fresh context, use only if it naturally helps:
 - daily quote: ${fresh.quote || "unavailable"}
 - positive-news headline: ${fresh.headline || "unavailable"}
 
-If mood is 2 or lower, or stress is 9 or higher, keep the action focused on basic care or human connection rather than productivity.`;
+If mood is 2 or lower, energy is 2 or lower, or stress is 9 or higher, focus on basic care, rest, sobriety support, or human connection rather than productivity.`;
 
   try {
-    const gateway = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+    const response = await fetchWithTimeout("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        "Authorization": "Bearer " + apiKey,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: process.env.AI_GATEWAY_MODEL || DEFAULT_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: "You write brief, compassionate, practical daily motivation for a wellbeing tracker."
-          },
-          { role: "user", content: prompt }
-        ],
-        max_tokens: 180,
-        temperature: 0.6
+        model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
+        instructions: "You write brief, compassionate, practical daily reflections for a wellbeing journal.",
+        input: prompt,
+        max_output_tokens: 180,
+        store: false
       })
-    });
+    }, 12000);
 
-    if (!gateway.ok) {
-      return res.status(200).json(fallbackResult);
+    if (!response.ok) {
+      console.error("OpenAI response failed", response.status);
+      return res.status(200).json({ ...fallbackResult, source: "CheckMate fallback · AI temporarily unavailable" });
     }
 
-    const data = await gateway.json();
-    const text = data?.choices?.[0]?.message?.content || "";
+    const data = await response.json();
+    const text = getResponseText(data);
     const message = text.match(/MESSAGE:\s*([\s\S]*?)(?=\nACTION:|$)/i)?.[1]?.trim();
     const action = text.match(/ACTION:\s*([\s\S]*)/i)?.[1]?.trim();
 
     if (!message || !action) {
-      return res.status(200).json(fallbackResult);
+      return res.status(200).json({ ...fallbackResult, source: "CheckMate fallback · AI response incomplete" });
     }
 
     const sources = [];
     if (fresh.quote) sources.push("daily quote");
     if (fresh.headline) sources.push("positive news");
-    sources.push("AI-personalised");
+    sources.push("OpenAI-personalised");
 
     return res.status(200).json({
       message: sanitize(message, 420),
       action: sanitize(action, 180),
       source: sources.join(" + ")
     });
-  } catch (_) {
-    return res.status(200).json(fallbackResult);
+  } catch (error) {
+    console.error("OpenAI request error", error?.message || "unknown");
+    return res.status(200).json({ ...fallbackResult, source: "CheckMate fallback · AI temporarily unavailable" });
   }
 }
