@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f4ee" />
+  <meta name="description" content="CheckMate — a gentle daily reset for real life." />
+  <title>CheckMate — 5% better today</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CheckMate home">
+        <span class="brand-mark">✓</span>
+        <span>CheckMate</span>
+      </a>
+      <div class="save-state" id="saveState">Saved locally</div>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow" id="todayLabel"></p>
+      <h1>You don't need to fix your whole life today.</h1>
+      <p class="hero-copy">Just make today <strong>5% better.</strong></p>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-value" id="alcoholStreak">0</span>
+          <span class="stat-label">alcohol-free days</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="completedCount">0</span>
+          <span class="stat-label">wins today</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="weekCount">0</span>
+          <span class="stat-label">check-ins this week</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid two">
+      <article class="card checkin-card">
+        <div class="card-head">
+          <div>
+            <p class="kicker">Daily check-in</p>
+            <h2>How are you, really?</h2>
+          </div>
+          <span class="soft-badge">No judgement</span>
+        </div>
+
+        <div class="slider-group">
+          <label for="mood">Mood <strong id="moodValue">5</strong>/10</label>
+          <input id="mood" type="range" min="1" max="10" value="5" />
+          <div class="range-labels"><span>Heavy</span><span>Good</span></div>
+        </div>
+        <div class="slider-group">
+          <label for="stress">Stress <strong id="stressValue">5</strong>/10</label>
+          <input id="stress" type="range" min="1" max="10" value="5" />
+          <div class="range-labels"><span>Calm</span><span>Overloaded</span></div>
+        </div>
+        <div class="slider-group">
+          <label for="energy">Energy <strong id="energyValue">5</strong>/10</label>
+          <input id="energy" type="range" min="1" max="10" value="5" />
+          <div class="range-labels"><span>Empty</span><span>Full</span></div>
+        </div>
+
+        <label class="field-label" for="need">What do you need today?</label>
+        <input class="text-input" id="need" maxlength="120" placeholder="Rest, focus, connection, quiet..." />
+      </article>
+
+      <article class="card motivation-card">
+        <div class="card-head">
+          <div>
+            <p class="kicker">Fresh perspective</p>
+            <h2>Your daily reset</h2>
+          </div>
+          <button class="ghost-btn" id="refreshMotivation" type="button">Refresh</button>
+        </div>
+        <div class="motivation-body" id="motivationBody">
+          <div class="skeleton line"></div>
+          <div class="skeleton line short"></div>
+        </div>
+        <div class="source-note" id="sourceNote"></div>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <p class="kicker">The 3-win rule</p>
+          <h2>Three things are enough.</h2>
+        </div>
+        <span class="soft-badge" id="capacityBadge">Normal-capacity day</span>
+      </div>
+      <p class="section-copy">Pick three things that would make today count. Tiny is allowed.</p>
+      <div class="wins-grid">
+        <label><span>1</span><input id="win1" maxlength="90" placeholder="e.g. Don't drink today" /></label>
+        <label><span>2</span><input id="win2" maxlength="90" placeholder="e.g. 15-minute walk" /></label>
+        <label><span>3</span><input id="win3" maxlength="90" placeholder="e.g. Finish one work task" /></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <p class="kicker">Today's anchors</p>
+          <h2>Direction, not perfection.</h2>
+        </div>
+        <span class="progress-label" id="progressLabel">0 of 10</span>
+      </div>
+      <div class="progress-track"><span id="progressBar"></span></div>
+      <div class="anchor-grid" id="anchorGrid"></div>
+    </section>
+
+    <section class="grid two">
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <p class="kicker">End the day</p>
+            <h2>Notice what happened.</h2>
+          </div>
+        </div>
+        <label class="field-label" for="proud">Today I'm proud that…</label>
+        <textarea id="proud" rows="3" maxlength="300" placeholder="Anything counts."></textarea>
+        <label class="field-label" for="hard">Something difficult was…</label>
+        <textarea id="hard" rows="3" maxlength="300" placeholder="Name it without judging yourself."></textarea>
+        <label class="field-label" for="tomorrow">Tomorrow's first step is…</label>
+        <textarea id="tomorrow" rows="2" maxlength="220" placeholder="Keep it small."></textarea>
+      </article>
+
+      <article class="card">
+        <div class="card-head">
+          <div>
+            <p class="kicker">Last 7 days</p>
+            <h2>Look for the trend.</h2>
+          </div>
+        </div>
+        <div id="weekView" class="week-view"></div>
+        <p class="section-copy compact">A missed day is not a reset to zero. CheckMate measures your direction over time.</p>
+      </article>
+    </section>
+
+    <section class="support-card" id="supportCard" hidden>
+      <div>
+        <p class="kicker">Heavy day</p>
+        <h2>You don't have to carry today alone.</h2>
+        <p>Your check-in looks especially heavy. Consider telling someone you trust that you're struggling, or reaching out to a professional. If you feel you might hurt yourself, contact your local emergency service now.</p>
+      </div>
+      <button type="button" class="support-dismiss" id="supportDismiss">I hear you</button>
+    </section>
+
+    <footer>
+      <p><strong>CheckMate</strong> is a reflection and habit tool, not medical care. Your entries stay on this device in V1.</p>
+      <p>Built around one question: <em>what would make today 5% better?</em></p>
+    </footer>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>
