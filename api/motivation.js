@@ -1,17 +1,27 @@
-const DEFAULT_MODEL = "openai/gpt-5.4-nano";
+const DEFAULT_MODEL = "inclusionai/ling-3.1-flash-free";
 
 function sanitize(value, max = 160) {
   return String(value ?? "").replace(/[\r\n<>]/g, " ").trim().slice(0, max);
 }
 
 function fallback(input, quote) {
-  const heavy = input.mood <= 3 || input.energy <= 3 || input.stress >= 8;
+  const veryHeavy = input.mood <= 2 || input.energy <= 2 || input.stress >= 9;
+  const heavy = veryHeavy || input.mood <= 3 || input.energy <= 3 || input.stress >= 8;
+
+  if (veryHeavy) {
+    return {
+      message: "Today looks especially heavy. Productivity is not the priority right now; keeping yourself fed, hydrated, alcohol-free and connected to someone safe is enough for today.",
+      action: "Pick one basic-care step, then tell one safe person you are having a difficult day.",
+      source: quote ? "Daily quote + CheckMate low-capacity support" : "CheckMate low-capacity support"
+    };
+  }
+
   return {
     message: heavy
       ? "Today looks like a lower-capacity day. Make the goal smaller, protect your basics, and let three quiet wins be enough."
       : "You do not need to transform your life today. A few deliberate choices are enough to keep moving in the direction you want.",
     action: heavy
-      ? "Do the easiest meaningful thing on your list first."
+      ? "Choose the gentlest meaningful win: eat, move for ten minutes, rest, connect, or protect today's alcohol-free choice."
       : "Choose one useful task and give it twenty focused minutes.",
     source: quote ? `Daily quote: “${quote}”` : "CheckMate"
   };
