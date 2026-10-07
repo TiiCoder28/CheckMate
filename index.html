@@ -115,6 +115,31 @@
       <div class="anchor-grid" id="anchorGrid"></div>
     </section>
 
+
+    <section class="card journal-card">
+      <div class="card-head">
+        <div>
+          <p class="kicker">Journal</p>
+          <h2>Put the weight somewhere.</h2>
+        </div>
+        <span class="soft-badge">Private on this device</span>
+      </div>
+      <p class="section-copy">Write freely, or use one of the prompts. This does not need to be polished.</p>
+      <div class="prompt-row" id="journalPrompts">
+        <button class="prompt-chip" type="button" data-prompt="What is taking up the most space in my mind right now?">What's taking up space?</button>
+        <button class="prompt-chip" type="button" data-prompt="What felt hardest today, and what did I need in that moment?">What felt hardest?</button>
+        <button class="prompt-chip" type="button" data-prompt="What am I proud of myself for, even if it feels small?">What am I proud of?</button>
+        <button class="prompt-chip" type="button" data-prompt="If I could speak to myself with kindness right now, what would I say?">What would I tell myself?</button>
+      </div>
+      <textarea id="journal" class="journal-textarea" rows="8" maxlength="6000" placeholder="Start wherever you are..."></textarea>
+      <div class="journal-actions">
+        <span class="journal-count" id="journalCount">0 words</span>
+        <button class="primary-btn" id="reflectJournal" type="button">Reflect with AI</button>
+      </div>
+      <p class="privacy-note">AI reflection sends today's check-in and journal entry to OpenAI only when you tap the button. CheckMate's request uses <code>store: false</code>.</p>
+      <div id="journalReflection" class="reflection-panel" hidden></div>
+    </section>
+
     <section class="grid two">
       <article class="card">
         <div class="card-head">
@@ -139,6 +164,9 @@
           </div>
         </div>
         <div id="weekView" class="week-view"></div>
+        <div id="historyDetail" class="history-detail">
+          <p class="history-empty">Tap a day to revisit it.</p>
+        </div>
         <p class="section-copy compact">A missed day is not a reset to zero. CheckMate measures your direction over time.</p>
       </article>
     </section>
@@ -153,7 +181,7 @@
     </section>
 
     <footer>
-      <p><strong>CheckMate</strong> is a reflection and habit tool, not medical care. Your entries stay on this device in V1.</p>
+      <p><strong>CheckMate</strong> is a reflection and journaling tool, not medical care. Journal entries stay on this device unless you explicitly request an AI reflection.</p>
       <p>Built around one question: <em>what would make today 5% better?</em></p>
     </footer>
   </main>
